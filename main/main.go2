@@ -1,0 +1,12 @@
+/*package main
+
+import (
+	ft "fmt"
+
+	ml "github.com/andreigrob/web_quiz_andrei/model"
+)
+
+func main() {
+	var a ml.Article
+	ft.Printf("a: %T\n", a)
+}*/

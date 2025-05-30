@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Submitted Answers</title>
+</head>
+<body>
+    <h1>All Submitted Answers</h1>
+    <a href="/answer.html">Back to Form</a>
+    <hr>
+    {{range .}}
+        <div style="border:1px solid #ccc; padding: 10px; margin: 10px;">
+            <strong>Name:</strong> {{.Name}}<br>
+            <strong>Email:</strong> {{.Email}}<br>
+            <strong>MessageA:</strong> {{.MessageA}}<br>
+            <strong>MessageB:</strong> {{.MessageB}}<br>
+            <strong>MessageC:</strong> {{.MessageC}}<br>
+        </div>
+    {{else}}
+        <p>No answers submitted yet.</p>
+    {{end}}
+</body>
+</html>

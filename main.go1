@@ -1,0 +1,44 @@
+package main
+
+import (
+    "html/template"
+    "log"
+    "net/http"
+    "os"
+    "path/filepath"
+
+    "github.com/go-chi/chi/v5"
+    "github.com/andreigrob/web_quiz_andrei/controller"
+    "gorm.io/driver/postgres"
+    "gorm.io/gorm"
+)
+
+func main() {
+    dsn := os.Getenv("SUPABASE_DB_DSN")
+    if dsn == "" {
+        log.Fatal("Please set SUPABASE_DB_DSN environment variable")
+    }
+
+    db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+    if err != nil {
+        log.Fatalf("failed to connect to database: %v", err)
+    }
+
+    tmpl, err := template.ParseFiles(
+        filepath.Join("view", "form.html"),
+        filepath.Join("view", "answers.html"),
+    )
+    if err != nil {
+        log.Fatalf("Error parsing templates: %v", err)
+    }
+
+    formController := controller.NewFormController(db, tmpl)
+
+    r := chi.NewRouter()
+    r.Get("/", formController.ShowForm)
+    r.Post("/submit", formController.SubmitForm)
+    r.Get("/answers", formController.ShowAnswers)
+
+    log.Println("Server started at :8080")
+    http.ListenAndServe(":8080", r)
+}

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Submitted Comments</title>
+</head>
+<body>
+    <h1>All Submitted Comments</h1>
+    <a href="/">Back to Form</a>
+    <hr>
+    {{range .}}
+        <div style="border:1px solid #ccc; padding: 10px; margin: 10px;">
+            <strong>Name:</strong> {{.Name}}<br>
+            <strong>Email:</strong> {{.Email}}<br>
+            <strong>Message:</strong> {{.Message}}<br>
+        </div>
+    {{else}}
+        <p>No comments submitted yet.</p>
+    {{end}}
+</body>
+</html>

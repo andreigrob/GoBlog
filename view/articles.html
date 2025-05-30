@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Submitted Articles</title>
+</head>
+<body>
+    <h1>All Submitted Articles</h1>
+    <a href="/article.html">Back to Form</a>
+    <hr>
+    {{range .}}
+        <div style="border:1px solid #ccc; padding: 10px; margin: 10px;">
+            <strong>Name:</strong> {{.Name}}<br>
+            <strong>Email:</strong> {{.Email}}<br>
+            <strong>Message:</strong> {{.Message}}<br>
+            <strong>Comments:</strong>
+            {{range .Comments}}
+                <div style="border:1px solid #ccc; padding: 10px; margin: 10px;">
+                    <strong>Name:</strong> {{.Name}}<br>
+                    <strong>Email:</strong> {{.Email}}<br>
+                    <strong>Message:</strong> {{.Message}}<br>
+                </div>
+            {{end}}
+            <a href="/comment.html?articleId={{.Id}}">Add Comment</a>
+        </div>
+    {{else}}
+        <p>No articles submitted yet.</p>
+    {{end}}
+</body>
+</html>
