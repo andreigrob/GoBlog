@@ -13,57 +13,60 @@ import (
 
 type Rows = ut.Rows
 
-func save[T ml.IEntity](c IController, w RW, item T) (id int64, err error) {
+func save[T ml.EntityI](c ControllerI, wr ResWr, item T) (id int64, e error) {
 	Class := item.Class()
 	conn := c.GetConn()
+	// insert into TABLE_NAME (ID, FIELD1, FIELD2) values ($1, $2, $3) returning ID
 	query := ft.Sprintf("insert into %s (%s) values (%s) returning Id", Class.GetTableName(), Class.GetFieldNames(), Class.GetFieldStr())
 	log.Printf("Query: %s", query)
 	name := ut.Name(item)
 	fields := item.GetFields()
 	log.Printf("Fields: %v", fields)
-	var rows Rows
-	if rows, err = conn.Query(ct.Background(), query, fields...); err != nil {
-		ht.Error(w, "Failed to save item", ht.StatusInternalServerError)
-		log.Printf("Failed to save %s: %v", name, err)
+	rows, e := conn.Query(ct.Background(), query, fields...)
+	if e != nil {
+		ht.Error(wr, "Failed to save item", ht.StatusInternalServerError)
+		log.Printf("Failed to save %s: %v", name, e)
 		return
 	}
 	log.Printf("rows: %v\n", rows)
 	defer rows.Close()
 	if !rows.Next() {
-		ht.Error(w, "No rows returned", ht.StatusInternalServerError)
-		log.Printf("No rows returned for %s: %v", name, err)
+		ht.Error(wr, "No rows returned", ht.StatusInternalServerError)
+		log.Printf("No rows returned for %s: %v", name, e)
 	}
-	if err = rows.Scan(&id); err != nil {
-		ht.Error(w, "Failed to scan item", ht.StatusInternalServerError)
-		log.Printf("Failed to scan %s: %v", name, err)
+	if e = rows.Scan(&id); e != nil {
+		ht.Error(wr, "Failed to scan item", ht.StatusInternalServerError)
+		log.Printf("Failed to scan %s: %v", name, e)
 		return
 	}
 	log.Printf("Saved %s: %v", name, id)
-	return id, err
+	return id, e
 }
 
-func find[T ml.IEntity](c IController, w RW, entities *[]T) (err error) {
-	var entity T
-	/var a = ut.Star[ml.IEntity](entity)
+func find[T any, P ml.EntityPI[T]](c ControllerI, wr ResWr, entities *[]P) (e error) {
+	var entity P
+	//var a = ut.Star[ml.IEntity](entity)
 	Class := entity.Class()
 	conn := c.GetConn()
 	query := ft.Sprintf("select %s from %s", Class.GetAllFieldNames(), Class.GetTableName())
 	log.Printf("Query: %s", query)
 	name := Class.GetName()
-	var rows Rows
-	if rows, err = conn.Query(ct.Background(), query); err != nil {
-		ht.Error(w, "Failed to retrieve items", ht.StatusInternalServerError)
-		log.Printf("Failed to find %s: %v", name, err)
+	rows, e := conn.Query(ct.Background(), query)
+	if e != nil {
+		ht.Error(wr, "Failed to retrieve items", ht.StatusInternalServerError)
+		log.Printf("Failed to find %s: %v", name, e)
 		return
 	}
 	defer rows.Close()
 	// create a linked list of items
 	items := lt.New()
 	log.Printf("Retrieving %s", name)
+
+	var val P
 	for rows.Next() {
-		val := entity.NewAny().(T)
-		if err = val.Scan(rows); err != nil {
-			log.Printf("Failed to scan %s: %v", name, err)
+		val = new(T)
+		if e = val.Scan(rows); e != nil {
+			log.Printf("Failed to scan %s: %v", name, e)
 			return
 		}
 		items.PushBack(val)
@@ -71,11 +74,11 @@ func find[T ml.IEntity](c IController, w RW, entities *[]T) (err error) {
 	}
 
 	Len := items.Len()
-	*entities = make([]T, Len)
+	*entities = make([]P, Len)
 	var i int
 	v := items.Front()
 	for ; v != nil; v = v.Next() {
-		(*entities)[i] = v.Value.(T)
+		(*entities)[i] = v.Value.(P)
 		i++
 	}
 	log.Printf("Found %d %s", Len, name)

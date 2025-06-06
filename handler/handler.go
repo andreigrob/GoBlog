@@ -12,7 +12,7 @@ type Routes = map[string]ht.HandlerFunc
 type HandlerF = ht.HandlerFunc
 
 type Handler struct {
-	fc              cr.FormCr
+	fc              cr.FormCrT
 	routesGet       Routes
 	routesPost      Routes
 	articleHtmlGet  ht.HandlerFunc
@@ -23,7 +23,7 @@ type Handler struct {
 	answerHtmlPost  ht.HandlerFunc
 }
 
-func (h *Handler) Init(fc cr.FormCr) {
+func (h *Handler) Init(fc cr.FormCrT) {
 	h.fc = fc
 	h.articleHtmlGet = cr.FormHandler[*ml.Article](&fc)
 	h.commentHtmlGet = cr.FormHandler[*ml.Comment](&fc)
@@ -33,26 +33,26 @@ func (h *Handler) Init(fc cr.FormCr) {
 	h.answerHtmlPost = cr.SubmitHandler[*ml.Comment](&fc)
 
 	h.routesGet = Routes{
-		"/article.html":  h.articleHtmlGet,
-		"/":              h.commentHtmlGet,
-		"/answer.html":   h.answerHtmlGet,
-		"/articles.html": fc.ArticlesHtmlGet,
-		"/comments.html": fc.CommentsHtmlGet,
-		"/answers.html":  fc.AnswersHtmlGet,
+		`/`:              h.articleHtmlGet,
+		`/comment.html`:  h.commentHtmlGet,
+		`/answer.html`:   h.answerHtmlGet,
+		`/articles.html`: fc.ArticlesHtmlGet,
+		`/comments.html`: fc.CommentsHtmlGet,
+		`/answers.html`:  fc.AnswersHtmlGet,
 		// API
-		"/articles.json": fc.ArticlesJsonGet,
-		"/comments.json": fc.CommentsJsonGet,
-		"/answers.json":  fc.AnswersJsonGet,
+		`/articles.json`: fc.ArticlesJsonGet,
+		`/comments.json`: fc.CommentsJsonGet,
+		`/answers.json`:  fc.AnswersJsonGet,
 	}
 
 	h.routesPost = Routes{
-		"/article.html": h.articleHtmlPost,
-		"/":             h.commentHtmlPost,
-		"/answer.html":  h.answerHtmlPost,
+		`/article.html`: h.articleHtmlPost,
+		`/`:             h.commentHtmlPost,
+		`/answer.html`:  h.answerHtmlPost,
 		// API
-		"/article.json": fc.ArticleJsonPost,
-		"/comment.json": fc.CommentJsonPost,
-		"/answer.json":  fc.AnswerJsonPost,
+		`/article.json`: fc.ArticleJsonPost,
+		`/comment.json`: fc.CommentJsonPost,
+		`/answer.json`:  fc.AnswerJsonPost,
 	}
 }
 
@@ -82,28 +82,30 @@ func initRoutes(fc *cr.FormCr) {
 }
 */
 
-func (h *Handler) ServeHTTP(w ut.RW, req *ut.Req) {
+func (h *Handler) ServeHTTP(wr ut.ResWr, req *ut.Req) {
 	switch req.Method {
-	case "GET":
-		h.Get(w, req)
-	case "POST":
-		h.Post(w, req)
+	case `GET`:
+		h.Get(wr, req)
+	case `POST`:
+		h.Post(wr, req)
 	}
 }
 
-func (h *Handler) handle(routes Routes, w ut.RW, req *ut.Req) {
+var message = []byte("404 Not Found")
+
+func (h *Handler) handle(routes Routes, wr ut.ResWr, req *ut.Req) {
 	if handler, ok := routes[req.URL.Path]; ok {
-		handler(w, req)
+		handler(wr, req)
 		return
 	}
-	w.WriteHeader(ht.StatusNotFound)
-	_, _ = w.Write([]byte("404 Not Found"))
+	wr.WriteHeader(ht.StatusNotFound)
+	_, _ = wr.Write(message)
 }
 
-func (h *Handler) Get(w ut.RW, req *ut.Req) {
-	h.handle(h.routesGet, w, req)
+func (h *Handler) Get(wr ut.ResWr, req *ut.Req) {
+	h.handle(h.routesGet, wr, req)
 }
 
-func (h *Handler) Post(w ut.RW, req *ut.Req) {
-	h.handle(h.routesPost, w, req)
+func (h *Handler) Post(wr ut.ResWr, req *ut.Req) {
+	h.handle(h.routesPost, wr, req)
 }

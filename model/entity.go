@@ -1,6 +1,7 @@
 package model
 
 import (
+	"log"
 	sc "strconv"
 	st "strings"
 
@@ -8,23 +9,47 @@ import (
 )
 
 // A Class has an associated EntityObject.
-type IClass interface {
+type ClassI interface {
 	Class() (_ *EntityObject)
 }
 
 // An Entity is a Class that has an Id and Fields.
-type IEntity interface {
-	IClass
+type EntityI interface {
+	ClassI
 
 	GetId() (_ int64)
 	SetId(id int64)
 	GetFields() (_ []any)
 	NewAny() (_ any)
 	InitAny(args ...any)
-	Scan(rows Rows) (err error)
+	Scan(rows Rows) (_ error)
 }
 
-// An EntityObject stores the Name, Table Name, and Field Names of a Class, and a New function and a Scan function to create new instances.
+type EntityPI[T any] interface {
+	EntityI
+	*T
+}
+
+type ArticlePI = EntityPI[Article]
+
+type AnswerPI = EntityPI[Answer]
+
+type CommentPI = EntityPI[Comment]
+
+func Hello[T any, P EntityPI[T]]() {
+	var a T
+	log.Printf("Hello %v", a)
+	var b P
+	log.Printf("Hello %v", b.Class().GetName())
+	var c P = &a
+	log.Printf("Hello %v", c.Class().GetName())
+}
+
+func Hello2() {
+	Hello[Article]()
+}
+
+// An EntityObject stores the Name, Table Name, and Field Names of a Class, and attributes derived from them.
 type EntityObject struct {
 	Name          string
 	NameLower     string
@@ -48,7 +73,7 @@ func fieldsString(nFields int) (_ string) {
 }
 
 // Init initializes an EntityObject.
-func (e *EntityObject) Init(Name string, TableName string, FieldNames string) {
+func (e *EntityObject) Init(Name, TableName, FieldNames string) {
 	e.Name = Name
 	e.NameLower = st.ToLower(Name)
 	e.TableName = TableName

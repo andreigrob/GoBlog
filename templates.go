@@ -8,23 +8,23 @@ import (
 )
 
 const (
-	viewDir    = "view"
+	viewDir    = `views`
 	nTemplates = 100
 )
 
 var (
-	templatePaths []string
+	tmpl *tp.Template
 )
 
-func loadTemplates() (err error) {
-	templatePaths = make([]string, 0, nTemplates)
-	var files []os.DirEntry
-	if files, err = os.ReadDir(viewDir); err != nil {
-		log.Fatalf("Error reading view directory: %v", err)
-		return err
+func loadTemplates() (templatePaths []string, e error) {
+	files, e := os.ReadDir(viewDir)
+	if e != nil {
+		log.Fatalf("Error reading view directory: %v", e)
+		return
 	}
-	var i int
-	for i = range files {
+	templatePaths = make([]string, 0, nTemplates)
+	var i int = len(files) - 1
+	for ; i >= 0; i-- {
 		if files[i].IsDir() {
 			continue
 		}
@@ -33,9 +33,34 @@ func loadTemplates() (err error) {
 	return
 }
 
-func parseTemplates() (tmpl *tp.Template, err error) {
-	if tmpl, err = tp.ParseFiles(templatePaths...); err != nil {
-		log.Fatalf("Error parsing templates: %v", err)
+func parseTemplates(templatePaths []string) (t *tp.Template, e error) {
+	log.Printf("parseTemplates: templatePaths: %v", templatePaths)
+	if t, e = tp.ParseFiles(templatePaths...); e != nil {
+		return
 	}
+	log.Printf("parseTemplates: tmpl: %v", tmpl)
 	return
+}
+
+func getTemplates() (t *tp.Template, e error) {
+	templatePaths, e := loadTemplates()
+	if e != nil {
+		log.Fatalf("Error loading templates: %v", e)
+		return
+	}
+	t, e = parseTemplates(templatePaths)
+	if e != nil {
+		log.Fatalf("Error parsing templates: %v", e)
+		return
+	}
+	log.Printf("getTemplates: t: %v", t)
+	return
+}
+
+func templates() (_ *tp.Template) {
+	if tmpl == nil {
+		tmpl, _ = getTemplates()
+	}
+	log.Printf("templates: tmpl: %v", tmpl)
+	return tmpl
 }

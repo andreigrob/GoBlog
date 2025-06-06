@@ -5,37 +5,36 @@ import (
 	"log"
 	ht "net/http"
 
-	ml "github.com/andreigrob/web_quiz_andrei/model"
 	ut "github.com/andreigrob/web_quiz_andrei/utils"
 )
 
-func writeResponse(w RW, status int, message []byte) (err error) {
-	w.WriteHeader(status)
-	if _, err = w.Write(message); err != nil {
-		ht.Error(w, "Failed to write response", ht.StatusInternalServerError)
-		log.Printf("Failed to write response: %v", err)
+func writeResponse(wr ResWr, status int, message []byte) (e error) {
+	wr.WriteHeader(status)
+	if _, e = wr.Write(message); e != nil {
+		ht.Error(wr, "Failed to write response", ht.StatusInternalServerError)
+		log.Printf("Failed to write response: %v", e.Error())
 		return
 	}
 	log.Printf("Wrote response (%s)", message)
 	return
 }
 
-func encode[T ml.IEntity](w RW, items []T) (err error) {
+func encode[T any](wr ResWr, items []T) (e error) {
 	name := ut.Name(items)
-	if err = js.NewEncoder(w).Encode(items); err != nil {
-		ht.Error(w, "Failed to encode "+name, ht.StatusInternalServerError)
-		log.Printf("Failed to encode %s: %v", name, err)
+	if e = js.NewEncoder(wr).Encode(items); e != nil {
+		ht.Error(wr, "Failed to encode "+name, ht.StatusInternalServerError)
+		log.Printf("Failed to encode %s: %v", name, e.Error())
 		return
 	}
 	log.Printf("Encoded %d %ss", len(items), name)
 	return
 }
 
-func decode[T any](w RW, req *Req, item *T) (err error) {
+func decode[T any](wr ResWr, req *Req, item *T) (e error) {
 	name := ut.Name(item)
-	if err = js.NewDecoder(req.Body).Decode(&item); err != nil {
-		ht.Error(w, "Failed to decode "+name, ht.StatusInternalServerError)
-		log.Printf("Failed to decode %s: %v", name, err)
+	if e = js.NewDecoder(req.Body).Decode(&item); e != nil {
+		ht.Error(wr, "Failed to decode "+name, ht.StatusInternalServerError)
+		log.Printf("Failed to decode %s: %v", name, e.Error())
 		return
 	}
 	log.Printf("Decoded %s (%s)", name, item)

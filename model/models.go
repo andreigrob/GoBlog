@@ -13,9 +13,9 @@ var (
 
 // Initialize Entity Objects
 func init() {
-	ArticleObject.Init("article", "Articles", "Name, Email, Message")
-	CommentObject.Init("comment", "Comments", "Name, Email, Message, ArticleId, CommentId")
-	AnswerObject.Init("answer", "Answers", "Name, Email, MessageA, MessageB, MessageC")
+	ArticleObject.Init(`Article`, `Articles`, "Name, Email, Message")
+	CommentObject.Init(`Comment`, `Comments`, "Name, Email, Message, ArticleId, CommentId")
+	AnswerObject.Init(`Answer`, `Answers`, "Name, Email, MessageA, MessageB, MessageC")
 }
 
 // Entity is a base struct for all entities.
@@ -48,6 +48,12 @@ func (*Article) Class() (_ *EntityObject) {
 // Fields Array
 func (a *Article) GetFields() (_ []any) {
 	return []any{a.Name, a.Email, a.Message}
+}
+
+// ArticleDTO is a DTO for an Article with its Comments.
+type ArticleDTO struct {
+	Article
+	Comments []Comment
 }
 
 // A Comment is associated either with an Article or another Comment.
@@ -92,7 +98,7 @@ func (a *Answer) GetFields() (_ []any) {
 
 // Interface Checks
 var (
-	_ IEntity = &Article{}
-	_ IEntity = &Comment{}
-	_ IEntity = &Answer{}
+	_ EntityI = &Article{}
+	_ EntityI = &Comment{}
+	_ EntityI = &Answer{}
 )

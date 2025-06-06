@@ -25,6 +25,11 @@ func IsDefault[T comparable](comp T) (_ bool) {
 	return comp == Default[T]()
 }
 
+// E returns true if the value is not the default value.
+func E[T comparable](val T) (_ bool) {
+	return val != Default[T]()
+}
+
 // IfDefault returns the value or the argument.
 func IfDefault[T comparable](comp T, val T) (_ T) {
 	if IsDefault(comp) {

@@ -24,8 +24,9 @@ func IfNil[T any](pointer *T, val *T) (_ *T) {
 	return pointer
 }
 
-func New[T any](_ *T) (_ T) {
-	return
+func New[T any](_ *T) (_ *T) {
+	var t T
+	return &t
 }
 
 func Init[T any](pointer **T) (t T) {

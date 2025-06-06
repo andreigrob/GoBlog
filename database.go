@@ -8,16 +8,18 @@ import (
 	sq "github.com/jackc/pgx/v5"
 )
 
-func getConnectionStr() (dsn string) {
-	if dsn = os.Getenv("SUPABASE_DB_DSN"); dsn == "" {
-		log.Fatal("Please set SUPABASE_DB_DSN environment variable")
+func getConnectionStr() (connStr string) {
+	const connVar = `SUPABASE_CONN_STR`
+	if connStr = os.Getenv(connVar); connStr == "" {
+		log.Fatalln("Please set", connVar, "environment variable")
+		return
 	}
 	return
 }
 
-func connectToDb(dsn string) (conn *sq.Conn, err error) {
-	if conn, err = sq.Connect(ct.Background(), dsn); err != nil {
-		log.Fatalf("Failed to connect to the database: %v", err)
+func connectToDb(connStr string) (conn *sq.Conn, e error) {
+	if conn, e = sq.Connect(ct.Background(), connStr); e != nil {
+		log.Fatalf("Failed to connect to the database: %v\n", e)
 		return
 	}
 	return

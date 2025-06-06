@@ -5,7 +5,6 @@ import (
 	ht "net/http"
 
 	ml "github.com/andreigrob/web_quiz_andrei/model"
-	ut "github.com/andreigrob/web_quiz_andrei/utils"
 )
 
 // View Form
@@ -27,104 +26,113 @@ func (c *FormCr) AnswerForm(w RW, _ *Req) {
 */
 
 // FormHandler returns a handler that renders a form template for an Entity.
-func FormHandler[T ml.IEntity](c *FormCr) (_ ht.HandlerFunc) {
-	return func(w RW, _ *Req) {
-		renderForm[T](c, w)
+func FormHandler[T ml.EntityI](c *FormCrT) (_ ht.HandlerFunc) {
+	return func(wr ResWr, _ *Req) {
+		renderForm[T](c, wr)
 	}
 }
 
 // renderForm renders a form template for an Entity.
-func renderForm[T ml.IEntity](c *FormCr, w RW) {
+func renderForm[T ml.EntityI](c *FormCrT, wr ResWr) {
 	var val T
-	_ = c.writeForm(w, val.Class().GetNameLower())
+	_ = c.writeForm(wr, val.Class().GetNameLower())
 }
 
 // writeForm renders a form template and writes it to the response.
-func (c *FormCr) writeForm(w RW, name string) (err error) {
-	if err = c.render(w, name+".html", nil); err != nil {
+func (c *FormCrT) writeForm(wr ResWr, name string) (err error) {
+	if err = c.render(wr, name+".html", nil); err != nil {
 		return
 	}
 	return
 }
 
 var to = map[string]any{
-	"article": toArticle,
-	"comment": toComment,
-	"answer":  toAnswer,
+	`article`: toArticle,
+	`comment`: toComment,
+	`answer`:  toAnswer,
 }
 
-func SubmitHandler[T ml.IEntity](c *FormCr) (_ ht.HandlerFunc) {
-	return func(w RW, req *Req) {
+func SubmitHandler[T ml.EntityI](c *FormCrT) (_ ht.HandlerFunc) {
+	return func(wr ResWr, req *Req) {
 		var val T
-		_ = submit(c, w, req, to[val.Class().GetNameLower()].(toItem[T]))
+		_ = submit(c, wr, req, to[val.Class().GetNameLower()].(toItem[T]))
 	}
 }
 
 // Submit Form
 // POST article.html
-func (c *FormCr) SubmitArticle(w RW, req *Req) {
-	_ = submit(c, w, req, toArticle)
+func (c *FormCrT) SubmitArticle(wr ResWr, req *Req) {
+	_ = submit(c, wr, req, toArticle)
 }
 
 // POST comment.html
-func (c *FormCr) SubmitComment(w RW, req *Req) {
-	_ = submit(c, w, req, toComment)
+func (c *FormCrT) SubmitComment(wr ResWr, req *Req) {
+	_ = submit(c, wr, req, toComment)
 }
 
 // POST answer.html
-func (c *FormCr) SubmitAnswer(w RW, req *Req) {
-	_ = submit(c, w, req, toAnswer)
+func (c *FormCrT) SubmitAnswer(wr ResWr, req *Req) {
+	_ = submit(c, wr, req, toAnswer)
 }
 
 // submit reads values from the request, saves them to the database, and redirects to the list page.
-func submit[T ml.IEntity](c *FormCr, w RW, req *Req, toT toItem[T]) (err error) {
+func submit[T ml.EntityI](c *FormCrT, wr ResWr, req *Req, toT toItem[T]) (err error) {
 	item := toT(req)
-	name := ut.NameLower(item)
+	name := item.Class().GetNameLower()
 	newUrl := "/" + name + "s.html?success=true"
 	log.Printf("newUrl: %s", newUrl)
 	var id int64
-	if id, err = save(c, w, item); err != nil {
+	if id, err = save(c, wr, item); err != nil {
 		return
 	}
 	log.Printf("Saved %s with id %d, redirecting to (%s)", name, id, newUrl)
-	ht.Redirect(w, req, newUrl, ht.StatusSeeOther)
+	ht.Redirect(wr, req, newUrl, ht.StatusSeeOther)
 	return
 }
 
 // List
-func (c *FormCr) ArticlesHtmlGet(w RW, _ *Req) {
-	const view = "articles.html"
+func (c *FormCrT) ArticlesHtmlGet(wr ResWr, _ *Req) {
+	const view = `articles.html`
 	var articles []*ml.Article
-	if err := find(c, w, &articles); err != nil {
+	if err := find(c, wr, &articles); err != nil {
 		log.Printf("Failed to find articles: %v", err)
 		return
 	}
-	if c.render(w, view, articles) != nil {
+	var Len = len(articles)
+	articleDTOs := make([]*ml.ArticleDTO, Len)
+	var i int
+	for ; i < Len; i++ {
+		articleDTOs[i] = &ml.ArticleDTO{
+			Article:  *articles[i],
+			Comments: make([]ml.Comment, 0),
+		}
+	}
+	if c.render(wr, view, articleDTOs) != nil {
 		return
 	}
 }
 
-func (c *FormCr) CommentsHtmlGet(w RW, _ *Req) {
+func (c *FormCrT) CommentsHtmlGet(wr ResWr, _ *Req) {
 	var comments []*ml.Comment
-	_ = writeList(c, w, comments)
+	_ = writeList(c, wr, comments)
 }
 
-func (c *FormCr) AnswersHtmlGet(w RW, _ *Req) {
+func (c *FormCrT) AnswersHtmlGet(wr ResWr, _ *Req) {
 	var answers []*ml.Answer
-	_ = writeList(c, w, answers)
+	_ = writeList(c, wr, answers)
 }
 
-func writeList[T ml.IEntity](c *FormCr, w RW, items []T) (err error) {
-	var val T
+func writeList[T any, P ml.EntityPI[T]](c *FormCrT, wr ResWr, items []P) (err error) {
+	var val P
 	Class := val.Class()
 	name := Class.GetNameLower()
 	view := name + "s.html"
 	log.Printf("Writing view %s", view)
-	if err = find(c, w, &items); err != nil {
+	if err = find(c, wr, &items); err != nil {
 		return
 	}
 	log.Printf("Found %d %s", len(items), name)
-	if err = c.render(w, view, items); err != nil {
+	if err = c.render(wr, view, items); err != nil {
 		return
 	}
 	log.Printf("Rendered %s", view)
