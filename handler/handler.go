@@ -30,7 +30,7 @@ func (h *Handler) Init(fc cr.FormCrT) {
 	h.answerHtmlGet = cr.FormHandler[*ml.Answer](&fc)
 	h.articleHtmlPost = cr.SubmitHandler[*ml.Article](&fc)
 	h.commentHtmlPost = cr.SubmitHandler[*ml.Comment](&fc)
-	h.answerHtmlPost = cr.SubmitHandler[*ml.Comment](&fc)
+	h.answerHtmlPost = cr.SubmitHandler[*ml.Answer](&fc)
 
 	h.routesGet = Routes{
 		`/`:              h.articleHtmlGet,
